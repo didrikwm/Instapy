@@ -1,0 +1,101 @@
+#!/usr/bin/env python
+import argparse
+import time
+import sys
+import os
+#SCRIPT_DIR = os.path.dirname(os.path.abspath("instapy.py"))
+#sys.path.append(os.path.dirname(SCRIPT_DIR))
+#print(sys.path)
+
+from filters.grayscale.numpy_color2gray import numpy_color2gray
+from filters.grayscale.python_color2gray import python_color2gray
+from filters.grayscale.numba_color2gray import numba_color2gray
+from filters.sepia.numpy_color2sepia import numpy_color2sepia
+from filters.sepia.python_color2sepia import python_color2sepia
+from filters.sepia.numba_color2sepia import numba_color2sepia
+
+import cv2
+
+def grayscale_image(in_file, out_file=None, implementation="python", scale=None):
+    """Routes an image to the implementation for grayscale conversion chosen by the user,
+    and scales and saves the resulting image if the user wants.
+    Args:
+        in_file (string): Path of image file.
+        out_file (string): Path to where the converted image will be saved.
+        implementation (string): The implementation chosen by the user.
+        scale (float): The amount of scaling chosen by the user.
+    Returns:
+        The grayscale version of the initial image.
+    """
+    GRAYSCALE_IMPLEMENTATIONS = {"python":python_color2gray,
+                                "numpy":numpy_color2gray,
+                                "numba":numba_color2gray}
+    img = cv2.imread(in_file)
+    img_gray = GRAYSCALE_IMPLEMENTATIONS[implementation](img)
+    if scale != None:
+        img_gray = cv2.resize(img_gray, (0, 0), fx=scale, fy=scale)
+    if out_file != None:
+        cv2.imwrite(out_file, img_gray)
+    return img_gray
+
+def sepia_image(in_file, out_file=None, implementation="python", scale=None, amount=None):
+    """Routes an image to the implementation for sepia conversion chosen by the user,
+    and scales and saves the resulting image if the user wants.
+    Args:
+        in_file (string): Path of image file.
+        out_file (string): Path to where the converted image will be saved.
+        implementation (string): The implementation chosen by the user.
+        scale (float): The amount of scaling chosen by the user.
+        amount (float): The amount of sepia to be added, chosen by the user.
+    Returns:
+        The sepia version of the initial image.
+    """
+    SEPIA_IMPLEMENTATIONS = {"python":python_color2sepia,
+                            "numpy":numpy_color2sepia,
+                            "numba":numba_color2sepia}
+    img = cv2.imread(in_file)
+    img_sepia = SEPIA_IMPLEMENTATIONS[implementation](img, amount)
+    if scale != None:
+        img_sepia = cv2.resize(img_sepia, (0, 0), fx=scale, fy=scale)
+    if out_file != None:
+        cv2.imwrite(out_file, img_sepia)
+    return img_sepia
+
+parser = argparse.ArgumentParser(description="Convert an image to grayscale or sepia.")
+
+parser.add_argument("-f", "--file", help="The file name of the image to apply a filter to.", type=str)
+
+group = parser.add_mutually_exclusive_group()
+group.add_argument("-se", "--sepia", action="store_true", help="Select sepia filter.")
+group.add_argument("-g", "--gray", action="store_true", help="Select grayscale filter.")
+
+parser.add_argument("-a", "--amount", help="Level of sepia to be applied (from 0.0-1.0)", type=float)
+parser.add_argument("-sc", "--scale", help="Scale factor to resize image, as float.", type=float)
+parser.add_argument("-i", "--implement", choices=["python","numpy","numba"], help="Choose the filter implementation.")
+parser.add_argument("-o", "--out", help="The file name for the output image.", type=str)
+parser.add_argument("-r", "--runtime", action="store_true", help="Track the average runtime spent on the chosen task.")
+
+args = parser.parse_args()
+
+repeat = 1
+tot_time = 0
+if args.runtime:
+    repeat = 3
+
+for i in range(repeat):
+    start = time.time()
+
+    if args.gray:
+        img = grayscale_image(args.file, args.out, args.implement, args.scale)
+    elif args.sepia:
+        img = sepia_image(args.file, args.out, args.implement, args.scale, args.amount)
+    else: # I want to require the user to enter either -g or -se, but there is no obvious way to make a mutually exclusive group of positional arguments.
+        # So I make a custom error message instead.
+        print("Please choose either grayscale (-g) or sepia (-se)")
+    
+    end = time.time()
+    tot_time += end - start
+
+if args.runtime:
+    runtime = tot_time / repeat
+    print("Average runtime after 3 runs:", runtime, "s.")
