@@ -1,4 +1,4 @@
-# README.md Assignment4
+# Instapy
 
 
 ## The package instapy 
@@ -19,6 +19,8 @@ The package is intended to be installed and run on a Linux computer (more specif
 
 ### Notes
 The user may experience errors due to different metacharacters for newline on Windows/Linux. In that case, the format of the file giving the error may be converted to the correct Linux format by opening the file in Vim and typing "_:set ff=unix_".
+
+This was an assignment for the course IN3110 at the Department of Informatics at the University of Oslo.
 
 ### Functionality
 The main functionality of this assignment is to let the user transform an image to grayscale or sepia. This is achieved with the package 'instapy'. The user may select the image to be transformed, the destination for the transformed image, as well as extra functionality such as selecting the implementation (python, numpy or numba) to be used, scaling the image, applying stepless sepia filter and tracking the runtime of the transformation process.
